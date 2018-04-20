@@ -66,18 +66,21 @@ class P2Pserver(socketserver.BaseRequestHandler):
                     continue
             elif data.decode() == 'quit':
                 print(self.client_address, "want to quit")
-                delKeys = []
-                for key,value in fileDir.items():   #删除表中退出peer的信息
-                    for c in value:
-                        if c.peerObj == peerObj:
-                            fileDir[key].remove(c)  #前提是列表中只有一个此peer信息
-                    if not value:   #删除文件名的peer列表为空状况
-                        delKeys.append(key)
-                for delKey in delKeys:
-                    del fileDir[delKey]
+                self.delDirPeerMsg(peerObj)
                 peerObj.send('log out success'.encode())
                 print(self.client_address, "has logged out")
                 break
+
+    def delDirPeerMsg(self, peerObj):
+        delKeys = []
+        for key,value in fileDir.items():   #删除表中退出peer的信息
+            for c in value:
+                if c.peerObj == peerObj:
+                    fileDir[key].remove(c)  #前提是列表中只有一个此peer信息
+            if not value:   #删除文件名的peer列表为空状况
+                delKeys.append(key)
+        for delKey in delKeys:  #不能在遍历字典时删除键
+            del fileDir[delKey]
 
 
 if __name__ == '__main__':
