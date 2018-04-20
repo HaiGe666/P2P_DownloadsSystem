@@ -47,23 +47,8 @@ class P2Pserver(socketserver.BaseRequestHandler):
                 print("file list has sent to", self.client_address)
                 continue
             elif data.decode() == 'download file':
-                print(self.client_address, "want to download file")
-                peerObj.send('filename'.encode())
-                wantFilenameObj = peerObj.recv(1024)
-                if not wantFilenameObj:
-                    continue
-                wantFilename = wantFilenameObj.decode()
-                print(self.client_address,"want", wantFilename)
-                if wantFilename in fileDir:
-                    peerObj.send('exist and ready'.encode())
-                    wantPeerAddrPortList = [n.addrPort for n in fileDir[wantFilename]]  #may have error
-                    peerObj.send(repr(wantPeerAddrPortList).encode())
-                    print(wantFilename, "peers list have sent...")
-                    continue
-                else:
-                    peerObj.send('not exist'.encode())
-                    print(wantFilename, "not exit")
-                    continue
+                self.dowf(peerObj)
+                continue
             elif data.decode() == 'quit':
                 print(self.client_address, "want to quit")
                 self.delDirPeerMsg(peerObj)
@@ -82,6 +67,24 @@ class P2Pserver(socketserver.BaseRequestHandler):
         for delKey in delKeys:  #不能在遍历字典时删除键
             del fileDir[delKey]
 
+    def dowf(self, peerObj):
+        print(self.client_address, "want to download file")
+        peerObj.send('filename'.encode())
+        wantFilenameObj = peerObj.recv(1024)
+        if not wantFilenameObj:
+            return
+        wantFilename = wantFilenameObj.decode()
+        print(self.client_address,"want", wantFilename)
+        if wantFilename in fileDir:
+            peerObj.send('exist and ready'.encode())
+            wantPeerAddrPortList = [n.addrPort for n in fileDir[wantFilename]]
+            peerObj.send(repr(wantPeerAddrPortList).encode())
+            print(wantFilename, "peers list have sent...")
+            return
+        else:
+            peerObj.send('not exist'.encode())
+            print(wantFilename, "not exit")
+            return
 
 if __name__ == '__main__':
     server = socketserver.ThreadingTCPServer(('127.0.0.1',10010), P2Pserver)
