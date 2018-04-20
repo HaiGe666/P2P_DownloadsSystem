@@ -19,25 +19,7 @@ class P2Pserver(socketserver.BaseRequestHandler):
             if not data:
                 continue
             if data.decode() == 'register':
-                print(self.client_address, "want to register...")
-                peerObj.send('give files you have'.encode())
-                filenamesObj = peerObj.recv(1024)    #空列表是否为空？
-                if not filenamesObj:
-                    continue
-                filenames = eval(filenamesObj.decode())
-                peerObj.send('give your dowAddrPort'.encode())
-                dowAddrPortObj = peerObj.recv(1024)
-                if not dowAddrPortObj:
-                    continue    #是否应该continue?不管了
-                dowAddrPort = eval(dowAddrPortObj.decode())
-                print("get the register peer download address and port", dowAddrPort)
-                for a_filename in filenames:
-                    a_PeerMsg = PeerMsg(dowAddrPort, peerObj)
-                    if a_filename not in fileDir:  #在fileList中是否存在这个文件名？
-                        fileDir[a_filename] = [a_PeerMsg]
-                    else:
-                        fileDir[a_filename].append(a_PeerMsg)
-                print(self.client_address, "register success...")
+                self.register(peerObj)
                 continue
             elif data.decode() == 'get file list':
                 print(self.client_address, "want to get file list")
@@ -66,6 +48,28 @@ class P2Pserver(socketserver.BaseRequestHandler):
                 delKeys.append(key)
         for delKey in delKeys:  #不能在遍历字典时删除键
             del fileDir[delKey]
+
+    def register(self, peerObj):
+        print(self.client_address, "want to register...")
+        peerObj.send('give files you have'.encode())
+        filenamesObj = peerObj.recv(1024)    #空列表也不是空
+        if not filenamesObj:
+            return
+        filenames = eval(filenamesObj.decode())
+        peerObj.send('give your dowAddrPort'.encode())
+        dowAddrPortObj = peerObj.recv(1024)
+        if not dowAddrPortObj:
+            return    #是否应该continue?不管了
+        dowAddrPort = eval(dowAddrPortObj.decode())
+        print("get the register peer download address and port", dowAddrPort)
+        for a_filename in filenames:
+            a_PeerMsg = PeerMsg(dowAddrPort, peerObj)
+            if a_filename not in fileDir:  #判断在fileList中是否存在这个文件名
+                fileDir[a_filename] = [a_PeerMsg]
+            else:
+                fileDir[a_filename].append(a_PeerMsg)
+        print(self.client_address, "register success...")
+        return
 
     def dowf(self, peerObj):
         print(self.client_address, "want to download file")
