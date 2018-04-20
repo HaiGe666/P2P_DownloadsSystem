@@ -12,31 +12,34 @@ class PeerMsg():
 class P2Pserver(socketserver.BaseRequestHandler):
     def handle(self):
         """main while for server to handle each connection"""
-        print("Get connection from", self.client_address)
-        while(True):
-            peerObj = self.request
-            data = peerObj.recv(1024)
-            if not data:
-                continue
-            if data.decode() == 'register':
-                self.register(peerObj)
-                continue
-            elif data.decode() == 'get file list':
-                print(self.client_address, "want to get file list")
-                fileList = list(fileDir.keys())
-                fileList.sort()
-                peerObj.send(repr(fileList).encode())
-                print("file list has sent to", self.client_address)
-                continue
-            elif data.decode() == 'download file':
-                self.dowf(peerObj)
-                continue
-            elif data.decode() == 'quit':
-                print(self.client_address, "want to quit")
-                self.delDirPeerMsg(peerObj)
-                peerObj.send('log out success'.encode())
-                print(self.client_address, "has logged out")
-                break
+        try:
+            print("Get connection from", self.client_address)
+            while(True):
+                peerObj = self.request
+                data = peerObj.recv(1024)
+                if not data:
+                    continue
+                if data.decode() == 'register':
+                    self.register(peerObj)
+                    continue
+                elif data.decode() == 'get file list':
+                    print(self.client_address, "want to get file list")
+                    fileList = list(fileDir.keys())
+                    fileList.sort()
+                    peerObj.send(repr(fileList).encode())
+                    print("file list has sent to", self.client_address)
+                    continue
+                elif data.decode() == 'download file':
+                    self.dowf(peerObj)
+                    continue
+                elif data.decode() == 'quit':
+                    print(self.client_address, "want to quit")
+                    self.delDirPeerMsg(peerObj)
+                    peerObj.send('log out success'.encode())
+                    print(self.client_address, "has logged out")
+                    break
+        except ConnectionResetError:
+            print("!!! peer", self.client_address, "Remote host forcibly closes an existing connection and terminates with his connection")
 
     def delDirPeerMsg(self, peerObj):
         delKeys = []
