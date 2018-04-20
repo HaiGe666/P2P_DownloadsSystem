@@ -139,7 +139,7 @@ class SendFileThread(threading.Thread):
         sendFileSc.listen(1)
         while True:  #待完成，希望是服务器？
             wantDowSc, wantDowAddrPort = sendFileSc.accept()    #完成一个peer的传输任务0以后accept是否可以继续接受其它peer
-            print('\n', "Peer", wantDowAddrPort, "is connecting...", end = '\n>>>')
+            print("\n* Peer", wantDowAddrPort, "is connecting...")
             dataObj = wantDowSc.recv(1024)  #[filename, number, segments]
             #远程主机强迫关闭了一个现有的连接
             if not dataObj:
@@ -148,7 +148,7 @@ class SendFileThread(threading.Thread):
             filename = dataList[0]
             number = dataList[1]
             segments = dataList[2]
-            print("Peer", wantDowAddrPort, "want", filename, number, '|', segments)
+            print("* Peer", wantDowAddrPort, "want", filename, number, '|', segments)
             filePath = os.path.join(os.path.abspath('.'), 'share', filename)
             fileSize = os.path.getsize(filePath)
             stChunk = fileSize/segments
@@ -168,7 +168,8 @@ class SendFileThread(threading.Thread):
                     sentSize += sendSize
                     wantDowSc.send(sendFile)
             wantDowSc.close()
-            print("completely send", filename, number, '|', segments)
+            print("* completely send", filename, number, '|', segments)
+            print(">>>", end = '')
 
 def main():
     peer = P2Pclient((HOST, PORT))
