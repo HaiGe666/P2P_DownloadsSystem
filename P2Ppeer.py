@@ -138,7 +138,7 @@ class P2Pclient():
         for i in range(fileNumber):
             os.remove(filename + str(i))
 
-class SendFileThread(threading.Thread):
+class SendFileThread(threading.Thread): #利用多线程实现peer与服务器连接的同时接收其他peer的连接
     def run(self):
         sendFileSc = sc.socket(sc.AF_INET, sc.SOCK_STREAM)    #可用TCPserver，但先不用
         sendFileSc.bind(PEERADDRPORT)
@@ -174,8 +174,7 @@ class SendFileThread(threading.Thread):
                     sentSize += sendSize
                     wantDowSc.send(sendFile)
             wantDowSc.close()
-            print("* completely send", filename, number, '|', segments)
-            print(">>>", end = '')
+            print("* completely send", filename, number, '|', segments, end = '\n>>>')
 
 def main():
     peer = P2Pclient((HOST, PORT))
