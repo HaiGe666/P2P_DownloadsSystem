@@ -73,7 +73,7 @@ class P2Pclient():
                     
                     #重点，分片从peer下载，最好实现多线程下载
 
-                    self.dowFromPeers(filename, peerAddrPortList)
+                    self.dowFromPeers(filename, peerAddrPortList)   #从peers下载文件的具体动作，是顺序下载
                     return True
                     
             elif ifExistObj.decode() == 'not exist':
@@ -104,13 +104,13 @@ class P2Pclient():
         for i in range(len(peersList)):
             print("downloading", filename, i, '|', len(peersList), 'please wait...')
             s = sc.socket(sc.AF_INET, sc.SOCK_STREAM)
-            s.connect(peersList[i]) #目标主机积极拒绝无法连接
+            s.connect(peersList[i])
             s.send(repr([filename, i, len(peersList)]).encode())
             dataObj = s.recv(1024)
             partFileSize = int(dataObj.decode())
             recievedSize = 0
 
-            with open(filename + str(i), 'wb') as f:
+            with open(filename + str(i), 'wb') as f:    #适应缓冲区下载过程
                 while recievedSize < partFileSize:
                     remainSize = partFileSize - recievedSize
                     rs = 1024 if remainSize > 1024 else remainSize
@@ -121,7 +121,9 @@ class P2Pclient():
 
         print("completely downloaded all", filename)
         
-        self.merf(filename, len(peersList))
+        self.merf(filename, len(peersList)) #合并分片下载的文件
+
+        self.delChunk(filename, len(peersList)) #删除分片
         
     def merf(self, filename, fileNumber):
         print("Merging files...")
@@ -131,6 +133,10 @@ class P2Pclient():
                     data = rf.read()
                     wf.write(data)
         print("completely merge files")
+    #思考一个将下载完成的文件移到share文件夹供其他peer继续下载，注意，需要同时更新服务器上的fileList
+    def delChunk(self, filename, fileNumber):
+        for i in range(fileNumber):
+            os.remove(filename + str(i))
 
 class SendFileThread(threading.Thread):
     def run(self):
