@@ -40,6 +40,7 @@ class P2Pserver(socketserver.BaseRequestHandler):
                     break
         except ConnectionResetError:
             print("!!! peer", self.client_address, "Remote host forcibly closes an existing connection and terminates with his connection")
+            self.delDirPeerMsg(peerObj)
 
     def delDirPeerMsg(self, peerObj):
         delKeys = []
