@@ -9,6 +9,34 @@ PORT = 10010
 
 PEERADDRPORT = ('127.0.0.1', 10086)
 
+class MultiDownload(threading.Thread):
+    def __init__(self, filename, chunkID, chunkSize, peerAddrPort):
+        threading.Thread.__init__(self)
+        self.filename = filename
+        self.chunkID = chunkID
+        self.chunkSize = chunkSize
+        self.peerAddrPort = peerAddrPort
+
+    def run(self):
+        print("downloading", self.filename, self.chunkID, '|', self.chunkSize, 'please wait...')
+        s = sc.socket(sc.AF_INET, sc.SOCK_STREAM)
+        s.connect(self.peerAddrPort)
+        s.send(repr([self.filename, self.chunkID, self.chunkSize]).encode())
+        dataObj = s.recv(1024)
+        partFileSize = int(dataObj.decode())
+        recievedSize = 0
+
+        f = open(self.filename + str(self.chunkID), 'wb')    #适应缓冲区下载过程
+        while recievedSize < partFileSize:
+            remainSize = partFileSize - recievedSize
+            rs = 1024 if remainSize > 1024 else remainSize
+            recFile = s.recv(rs)
+            f.write(recFile)
+            recievedSize += rs
+        f.close()
+        s.close()
+        print("completely download", self.filename, self.chunkID, '|', self.chunkSize)
+
 class P2Pclient():
     def __init__(self, desAddrPort):
         self.desAddrPort = desAddrPort
@@ -101,30 +129,23 @@ class P2Pclient():
         #拓展：实现多线程下载
         print("downloading", filename, "from", peersList)
         #先顺序
+        threadPool = []
         for i in range(len(peersList)):
-            print("downloading", filename, i, '|', len(peersList), 'please wait...')
-            s = sc.socket(sc.AF_INET, sc.SOCK_STREAM)
-            s.connect(peersList[i])
-            s.send(repr([filename, i, len(peersList)]).encode())
-            dataObj = s.recv(1024)
-            partFileSize = int(dataObj.decode())
-            recievedSize = 0
+            th = MultiDownload(filename, i, len(peersList), peersList[i])
+            threadPool.append(th)
 
-            with open(filename + str(i), 'wb') as f:    #适应缓冲区下载过程
-                while recievedSize < partFileSize:
-                    remainSize = partFileSize - recievedSize
-                    rs = 1024 if remainSize > 1024 else remainSize
-                    recFile = s.recv(rs)
-                    f.write(recFile)
-                    recievedSize += rs
-            print("completely download", filename, i, '|', len(peersList))
+        for th in threadPool:
+            th.start()
 
+        for th in threadPool:
+            th.join()
+        
         print("completely downloaded all", filename)
         
         self.merf(filename, len(peersList)) #合并分片下载的文件
 
         self.delChunk(filename, len(peersList)) #删除分片
-        
+    
     def merf(self, filename, fileNumber):
         print("Merging files...")
         with open(filename, 'wb') as wf:
